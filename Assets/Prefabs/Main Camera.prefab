@@ -113,7 +113,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   focusTransform: {fileID: 0}
-  distance: 5
+  distance: 10
   focusRadius: 1
   focusCentering: 0.5
   orbitAngles: {x: 0, y: 0}

@@ -168,7 +168,7 @@ public class MeshGenerator : MonoBehaviour
                         {
                             if (recycleableChunks.Count > 0)
                             {
-                                Chunk chunk = recycleableChunks.Dequeue();
+                                var chunk = recycleableChunks.Dequeue();
                                 chunk.coord = coord;
                                 existingChunks.Add(coord, chunk);
                                 chunks.Add(chunk);
@@ -176,7 +176,7 @@ public class MeshGenerator : MonoBehaviour
                             }
                             else
                             {
-                                Chunk chunk = CreateChunk(coord);
+                                var chunk = CreateChunk(coord);
                                 chunk.coord = coord;
                                 chunk.SetUp(mat, generateColliders);
                                 existingChunks.Add(coord, chunk);
@@ -227,7 +227,12 @@ public class MeshGenerator : MonoBehaviour
         Triangle[] tris = new Triangle[numTris];
         triangleBuffer.GetData(tris, 0, 0, numTris);
 
-        Mesh mesh = chunk.mesh;
+        if (generateColliders)
+        {
+            chunk.meshCollider.sharedMesh = null;
+        }
+
+        var mesh = chunk.mesh;
         mesh.Clear();
 
         var vertices = new Vector3[numTris * 3];
@@ -246,6 +251,10 @@ public class MeshGenerator : MonoBehaviour
         mesh.triangles = meshTriangles;
 
         mesh.RecalculateNormals();
+        if (generateColliders && meshTriangles.Length > 0)
+        {
+            chunk.meshCollider.sharedMesh = mesh;
+        }
     }
 
     public void UpdateAllChunks()
@@ -367,9 +376,9 @@ public class MeshGenerator : MonoBehaviour
         }
 
         // Delete all unused chunks
-        for (int i = 0; i < oldChunks.Count; i++)
+        foreach (var t in oldChunks)
         {
-            oldChunks[i].DestroyOrDisable();
+            t.DestroyOrDisable();
         }
     }
 
@@ -382,7 +391,7 @@ public class MeshGenerator : MonoBehaviour
         return newChunk;
     }
 
-    void OnValidate()
+    private void OnValidate()
     {
         settingsUpdated = true;
     }
@@ -411,16 +420,15 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
-    void OnDrawGizmos()
+    private void OnDrawGizmos()
     {
         if (showBoundsGizmo)
         {
             Gizmos.color = boundsGizmoCol;
 
-            List<Chunk> chunks = (this.chunks == null) ? new List<Chunk>(FindObjectsOfType<Chunk>()) : this.chunks;
+            var chunks = this.chunks == null ? new List<Chunk>(FindObjectsOfType<Chunk>()) : this.chunks;
             foreach (var chunk in chunks)
             {
-                Bounds bounds = new Bounds(CentreFromCoord(chunk.coord), Vector3.one * boundsSize);
                 Gizmos.color = boundsGizmoCol;
                 Gizmos.DrawWireCube(CentreFromCoord(chunk.coord), Vector3.one * boundsSize);
             }

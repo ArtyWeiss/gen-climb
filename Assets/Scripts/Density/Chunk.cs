@@ -5,12 +5,11 @@ public class Chunk : MonoBehaviour
 {
     public Vector3Int coord;
 
-    [HideInInspector] public Mesh mesh;
+    public Mesh mesh;
+    public MeshCollider meshCollider;
 
-    MeshFilter meshFilter;
-    MeshRenderer meshRenderer;
-    MeshCollider meshCollider;
-    bool generateCollider;
+    private MeshFilter meshFilter;
+    private MeshRenderer meshRenderer;
 
     public void DestroyOrDisable()
     {
@@ -28,8 +27,6 @@ public class Chunk : MonoBehaviour
     // Add components/get references in case lost (references can be lost when working in the editor)
     public void SetUp(Material mat, bool generateCollider)
     {
-        this.generateCollider = generateCollider;
-
         meshFilter = GetComponent<MeshFilter>();
         meshRenderer = GetComponent<MeshRenderer>();
         meshCollider = GetComponent<MeshCollider>();
@@ -57,8 +54,7 @@ public class Chunk : MonoBehaviour
         mesh = meshFilter.sharedMesh;
         if (mesh == null)
         {
-            mesh = new Mesh();
-            mesh.indexFormat = IndexFormat.UInt32;
+            mesh = new Mesh {indexFormat = IndexFormat.UInt32};
             meshFilter.sharedMesh = mesh;
         }
 
@@ -68,7 +64,6 @@ public class Chunk : MonoBehaviour
             {
                 meshCollider.sharedMesh = mesh;
             }
-
             // force update
             meshCollider.enabled = false;
             meshCollider.enabled = true;

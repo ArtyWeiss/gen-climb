@@ -7,7 +7,7 @@ public class OrbitCameraData : MonoBehaviour {
 	[Min(0f)] public float focusRadius = 1f;
 	[Range (0f, 1f)] public float focusCentering = 0.5f;
 
-	[Header("Rotation settings")]
+	[Header("Rotation settings")] public bool fixedRotation;
 	public Vector2 orbitAngles;
 	[Range(1f, 360f)] public float rotationSpeed = 90f;
 	public float smoothing = 2f;

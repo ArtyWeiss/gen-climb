@@ -4,12 +4,20 @@ using UnityEngine;
 public class Controller2d : MonoBehaviour
 {
     [Range(-1f, 1f)] public float horizontalInput;
-    public float speed;
+    public float acceleration;
+    public float maxVelocity;
+
     public bool isGrounded;
 
-    public Transform lifter;
-    public float lifterRadius;
-    public float groundCheckDistance;
+    public Rigidbody body;
+    [Range(0f, 2f)] public float lifterOffset;
+    [Range(0f, 2f)] public float lifterRadius;
+    [Range(0f, 1f)] public float stickRayOffset;
+
+    public LayerMask groundMask;
+
+    private const float LIFTER_BIAS = 0.8f;
+    private const float GRAVITY = -10f;
 
     private void Update()
     {
@@ -17,31 +25,31 @@ public class Controller2d : MonoBehaviour
         StickToGround();
     }
 
-    private void CheckGround()
-    {
-        isGrounded = Physics.CheckSphere(lifter.position, lifterRadius);
-    }
-
     private void Move()
     {
-        var deltaMoveX = horizontalInput * Time.deltaTime * speed;
-        var currentPosition = transform.position;
-        currentPosition.x += deltaMoveX;
+        var velocity = body.velocity;
 
-        transform.position = currentPosition;
+        velocity.x += horizontalInput * acceleration * Time.deltaTime;
+        if (Math.Abs(velocity.x) > maxVelocity)
+        {
+            velocity.x = maxVelocity * Mathf.Sign(velocity.x);
+        }
+
+        velocity.y = isGrounded ? 0f : velocity.y + GRAVITY * Time.deltaTime;
+
+        body.velocity = velocity;
     }
 
     private void StickToGround()
     {
-        var ray = new Ray {origin = lifter.position, direction = -lifter.up};
-        Debug.DrawRay(ray.origin, ray.direction * (groundCheckDistance + lifterRadius), Color.magenta, 0.01f, false);
+        var bodyTransform = body.transform;
+        var lifterPos = bodyTransform.position - bodyTransform.up * lifterOffset;
+        var ray = new Ray {origin = bodyTransform.position, direction = -bodyTransform.up};
 
-        var sphere_hits = Physics.SphereCastAll(lifter.position, lifterRadius, -lifter.up, groundCheckDistance);
-        if (sphere_hits.Length > 0)
+        if (Physics.CheckSphere(lifterPos, lifterRadius, groundMask))
         {
             isGrounded = true;
-
-            var hits = Physics.RaycastAll(ray, groundCheckDistance + lifterRadius);
+            var hits = Physics.RaycastAll(ray, lifterOffset + lifterRadius + stickRayOffset, groundMask);
             if (hits.Length > 0)
             {
                 var maxHeight = float.NegativeInfinity;
@@ -53,7 +61,9 @@ public class Controller2d : MonoBehaviour
                     }
                 }
 
-                transform.position = new Vector3(transform.position.x, maxHeight + lifterRadius, transform.position.z);
+                var newHeight = maxHeight + lifterRadius * LIFTER_BIAS + lifterOffset;
+
+                bodyTransform.position = new Vector3(bodyTransform.position.x, newHeight, bodyTransform.position.z);
             }
         }
         else
@@ -64,9 +74,12 @@ public class Controller2d : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        var bodyTransform = body.transform;
+        var lifterPos = bodyTransform.position - bodyTransform.up * lifterOffset;
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(lifter.position, lifterRadius);
-        var offset = lifter.up * groundCheckDistance;
-        Gizmos.DrawWireSphere(lifter.position - offset, lifterRadius);
+        Gizmos.DrawWireSphere(lifterPos, lifterRadius);
+
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawRay(bodyTransform.position, -bodyTransform.up * (lifterOffset + lifterRadius + stickRayOffset));
     }
 }
